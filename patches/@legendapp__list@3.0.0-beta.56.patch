@@ -1,0 +1,398 @@
+diff --git a/animated.d.ts b/animated.d.ts
+index 4f859e4f329f04f1ae1ec074e932d9576792884f..3c23785914c77f8bc16480e227ef797049fae0a1 100644
+--- a/animated.d.ts
++++ b/animated.d.ts
+@@ -411,6 +411,7 @@ interface AnchoredEndSpaceConfig {
+     anchorMaxSize?: number;
+     includeInEndInset?: boolean;
+     onSizeChanged?: (size: number) => void;
++    onCommit?: (size: number) => void;
+ }
+ interface StickyHeaderConfig {
+     /**
+diff --git a/index.d.ts b/index.d.ts
+index fa4c7f644d865c93552494100d760ea2258dabdf..0dceced6b3bdffcb6b81adb53cae4dd3effefba1 100644
+--- a/index.d.ts
++++ b/index.d.ts
+@@ -744,6 +744,7 @@ interface AnchoredEndSpaceConfig$1 {
+     anchorMaxSize?: number;
+     includeInEndInset?: boolean;
+     onSizeChanged?: (size: number) => void;
++    onCommit?: (size: number) => void;
+ }
+ interface StickyHeaderConfig$1 {
+     /**
+diff --git a/index.native.js b/index.native.js
+index 25676e306d6159a92695a597ed23e70dc55d4a82..c50104fb8904392287e2673fcbd6a219c51d6722 100644
+--- a/index.native.js
++++ b/index.native.js
+@@ -5167,6 +5167,8 @@ function maybeUpdateAnchoredEndSpace(ctx) {
+   const state = ctx.state;
+   const anchoredEndSpace = state.props.anchoredEndSpace;
+   const previousSize = peek$(ctx, "anchoredEndSpaceSize");
++  const previousAnchorIndex = state.anchoredEndSpaceAnchorIndex;
++  const nextAnchorIndex = anchoredEndSpace == null ? void 0 : anchoredEndSpace.anchorIndex;
+   let nextSize = 0;
+   if (anchoredEndSpace) {
+     const { anchorIndex, anchorMaxSize, anchorOffset = 0 } = anchoredEndSpace;
+@@ -5191,12 +5193,16 @@ function maybeUpdateAnchoredEndSpace(ctx) {
+       nextSize = hasUnknownTailSize ? previousSize || 0 : Math.max(0, state.scrollLength - contentBelowAnchor - anchorOffset);
+     }
+   }
+-  if (previousSize !== nextSize) {
+-    set$(ctx, "anchoredEndSpaceSize", nextSize);
+-    (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onSizeChanged) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
+-    if (anchoredEndSpace == null ? void 0 : anchoredEndSpace.includeInEndInset) {
++  if (previousSize !== nextSize || previousAnchorIndex !== nextAnchorIndex) {
++    state.anchoredEndSpaceAnchorIndex = nextAnchorIndex;
++    if (previousSize !== nextSize) {
++      set$(ctx, "anchoredEndSpaceSize", nextSize);
++      (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onSizeChanged) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
++    }
++    if (previousSize !== nextSize && (anchoredEndSpace == null ? void 0 : anchoredEndSpace.includeInEndInset)) {
+       updateScroll(ctx, state.scroll, true);
+     }
++    (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onCommit) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
+   }
+   return nextSize;
+ }
+diff --git a/index.native.mjs b/index.native.mjs
+index 470c335d4ef41521972553d1b20893974bc525c6..5fbcd836527d6589d4ed7dfb4b6502e70c419cab 100644
+--- a/index.native.mjs
++++ b/index.native.mjs
+@@ -5146,6 +5146,8 @@ function maybeUpdateAnchoredEndSpace(ctx) {
+   const state = ctx.state;
+   const anchoredEndSpace = state.props.anchoredEndSpace;
+   const previousSize = peek$(ctx, "anchoredEndSpaceSize");
++  const previousAnchorIndex = state.anchoredEndSpaceAnchorIndex;
++  const nextAnchorIndex = anchoredEndSpace == null ? void 0 : anchoredEndSpace.anchorIndex;
+   let nextSize = 0;
+   if (anchoredEndSpace) {
+     const { anchorIndex, anchorMaxSize, anchorOffset = 0 } = anchoredEndSpace;
+@@ -5170,12 +5172,16 @@ function maybeUpdateAnchoredEndSpace(ctx) {
+       nextSize = hasUnknownTailSize ? previousSize || 0 : Math.max(0, state.scrollLength - contentBelowAnchor - anchorOffset);
+     }
+   }
+-  if (previousSize !== nextSize) {
+-    set$(ctx, "anchoredEndSpaceSize", nextSize);
+-    (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onSizeChanged) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
+-    if (anchoredEndSpace == null ? void 0 : anchoredEndSpace.includeInEndInset) {
++  if (previousSize !== nextSize || previousAnchorIndex !== nextAnchorIndex) {
++    state.anchoredEndSpaceAnchorIndex = nextAnchorIndex;
++    if (previousSize !== nextSize) {
++      set$(ctx, "anchoredEndSpaceSize", nextSize);
++      (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onSizeChanged) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
++    }
++    if (previousSize !== nextSize && (anchoredEndSpace == null ? void 0 : anchoredEndSpace.includeInEndInset)) {
+       updateScroll(ctx, state.scroll, true);
+     }
++    (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onCommit) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
+   }
+   return nextSize;
+ }
+diff --git a/keyboard-chat.d.ts b/keyboard-chat.d.ts
+index f4899d5758703e0b8e359effd9b3e675b4034a17..6110c6b78541ed1a94fc23b992d9eac87de1217e 100644
+--- a/keyboard-chat.d.ts
++++ b/keyboard-chat.d.ts
+@@ -70,6 +70,7 @@ interface AnchoredEndSpaceConfig$1 {
+     anchorMaxSize?: number;
+     includeInEndInset?: boolean;
+     onSizeChanged?: (size: number) => void;
++    onCommit?: (size: number) => void;
+ }
+ interface LegendListAverageItemSize {
+     average: number;
+diff --git a/keyboard-chat.js b/keyboard-chat.js
+index c34aadfb32963eaf1ee2b8682478961c80f19373..d0cdb993b9de45cd1a89ee650eb1f3c7b2dd8c9a 100644
+--- a/keyboard-chat.js
++++ b/keyboard-chat.js
+@@ -106,6 +106,10 @@ var KeyboardChatLegendList = typedForwardRef(function KeyboardChatLegendList2(pr
+         var _a;
+         blankSpace.value = size;
+         (_a = anchoredEndSpace.onSizeChanged) == null ? void 0 : _a.call(anchoredEndSpace, size);
++      },
++      onCommit: (size) => {
++        var _a;
++        (_a = anchoredEndSpace.onCommit) == null ? void 0 : _a.call(anchoredEndSpace, size);
+       }
+     };
+   }, [anchoredEndSpace, blankSpace]);
+diff --git a/keyboard-chat.mjs b/keyboard-chat.mjs
+index ccfe2d325e1d079c9db0427549b2627d7687fc16..1e8b80bd98e4cb91768c7cbe1f47d65a7ac86797 100644
+--- a/keyboard-chat.mjs
++++ b/keyboard-chat.mjs
+@@ -85,6 +85,10 @@ var KeyboardChatLegendList = typedForwardRef(function KeyboardChatLegendList2(pr
+         var _a;
+         blankSpace.value = size;
+         (_a = anchoredEndSpace.onSizeChanged) == null ? void 0 : _a.call(anchoredEndSpace, size);
++      },
++      onCommit: (size) => {
++        var _a;
++        (_a = anchoredEndSpace.onCommit) == null ? void 0 : _a.call(anchoredEndSpace, size);
+       }
+     };
+   }, [anchoredEndSpace, blankSpace]);
+diff --git a/react-native.d.ts b/react-native.d.ts
+index fb125b22699f163292e7f6ec72ad0cb7ad0e0218..0eda367ab7ef06039c5a4090727da8a105053016 100644
+--- a/react-native.d.ts
++++ b/react-native.d.ts
+@@ -417,6 +417,7 @@ interface AnchoredEndSpaceConfig {
+     anchorMaxSize?: number;
+     includeInEndInset?: boolean;
+     onSizeChanged?: (size: number) => void;
++    onCommit?: (size: number) => void;
+ }
+ interface StickyHeaderConfig {
+     /**
+diff --git a/react-native.js b/react-native.js
+index acd7b0a632a8de3d246e57434a26ae2b68f71a0a..0a4627c67b389268e357856c4338263d14be7c71 100644
+--- a/react-native.js
++++ b/react-native.js
+@@ -5167,6 +5167,8 @@ function maybeUpdateAnchoredEndSpace(ctx) {
+   const state = ctx.state;
+   const anchoredEndSpace = state.props.anchoredEndSpace;
+   const previousSize = peek$(ctx, "anchoredEndSpaceSize");
++  const previousAnchorIndex = state.anchoredEndSpaceAnchorIndex;
++  const nextAnchorIndex = anchoredEndSpace == null ? void 0 : anchoredEndSpace.anchorIndex;
+   let nextSize = 0;
+   if (anchoredEndSpace) {
+     const { anchorIndex, anchorMaxSize, anchorOffset = 0 } = anchoredEndSpace;
+@@ -5191,12 +5193,16 @@ function maybeUpdateAnchoredEndSpace(ctx) {
+       nextSize = hasUnknownTailSize ? previousSize || 0 : Math.max(0, state.scrollLength - contentBelowAnchor - anchorOffset);
+     }
+   }
+-  if (previousSize !== nextSize) {
+-    set$(ctx, "anchoredEndSpaceSize", nextSize);
+-    (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onSizeChanged) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
+-    if (anchoredEndSpace == null ? void 0 : anchoredEndSpace.includeInEndInset) {
++  if (previousSize !== nextSize || previousAnchorIndex !== nextAnchorIndex) {
++    state.anchoredEndSpaceAnchorIndex = nextAnchorIndex;
++    if (previousSize !== nextSize) {
++      set$(ctx, "anchoredEndSpaceSize", nextSize);
++      (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onSizeChanged) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
++    }
++    if (previousSize !== nextSize && (anchoredEndSpace == null ? void 0 : anchoredEndSpace.includeInEndInset)) {
+       updateScroll(ctx, state.scroll, true);
+     }
++    (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onCommit) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
+   }
+   return nextSize;
+ }
+diff --git a/react-native.mjs b/react-native.mjs
+index 82829f3dd4a934d5c7a3b91c5ce3f091bb6a4b96..75923ff1d18cdf190366250a6796228652ee9007 100644
+--- a/react-native.mjs
++++ b/react-native.mjs
+@@ -5146,6 +5146,8 @@ function maybeUpdateAnchoredEndSpace(ctx) {
+   const state = ctx.state;
+   const anchoredEndSpace = state.props.anchoredEndSpace;
+   const previousSize = peek$(ctx, "anchoredEndSpaceSize");
++  const previousAnchorIndex = state.anchoredEndSpaceAnchorIndex;
++  const nextAnchorIndex = anchoredEndSpace == null ? void 0 : anchoredEndSpace.anchorIndex;
+   let nextSize = 0;
+   if (anchoredEndSpace) {
+     const { anchorIndex, anchorMaxSize, anchorOffset = 0 } = anchoredEndSpace;
+@@ -5170,12 +5172,16 @@ function maybeUpdateAnchoredEndSpace(ctx) {
+       nextSize = hasUnknownTailSize ? previousSize || 0 : Math.max(0, state.scrollLength - contentBelowAnchor - anchorOffset);
+     }
+   }
+-  if (previousSize !== nextSize) {
+-    set$(ctx, "anchoredEndSpaceSize", nextSize);
+-    (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onSizeChanged) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
+-    if (anchoredEndSpace == null ? void 0 : anchoredEndSpace.includeInEndInset) {
++  if (previousSize !== nextSize || previousAnchorIndex !== nextAnchorIndex) {
++    state.anchoredEndSpaceAnchorIndex = nextAnchorIndex;
++    if (previousSize !== nextSize) {
++      set$(ctx, "anchoredEndSpaceSize", nextSize);
++      (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onSizeChanged) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
++    }
++    if (previousSize !== nextSize && (anchoredEndSpace == null ? void 0 : anchoredEndSpace.includeInEndInset)) {
+       updateScroll(ctx, state.scroll, true);
+     }
++    (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onCommit) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
+   }
+   return nextSize;
+ }
+diff --git a/react-native.web.d.ts b/react-native.web.d.ts
+index 43394f513ae9516f7e36ba9d29692256445f5245..8b4b3a69a7c1f3a757f8de10e0e0062b7a20d7aa 100644
+--- a/react-native.web.d.ts
++++ b/react-native.web.d.ts
+@@ -440,6 +440,7 @@ interface AnchoredEndSpaceConfig$1 {
+     anchorMaxSize?: number;
+     includeInEndInset?: boolean;
+     onSizeChanged?: (size: number) => void;
++    onCommit?: (size: number) => void;
+ }
+ interface StickyHeaderConfig {
+     /**
+diff --git a/react-native.web.js b/react-native.web.js
+index 4b83b2564822b33ab0464fc42ffc90255ffa85b2..9c43511caf6755136160c98bc597e6d0570ff644 100644
+--- a/react-native.web.js
++++ b/react-native.web.js
+@@ -5824,6 +5824,8 @@ function maybeUpdateAnchoredEndSpace(ctx) {
+   const state = ctx.state;
+   const anchoredEndSpace = state.props.anchoredEndSpace;
+   const previousSize = peek$(ctx, "anchoredEndSpaceSize");
++  const previousAnchorIndex = state.anchoredEndSpaceAnchorIndex;
++  const nextAnchorIndex = anchoredEndSpace == null ? void 0 : anchoredEndSpace.anchorIndex;
+   let nextSize = 0;
+   if (anchoredEndSpace) {
+     const { anchorIndex, anchorMaxSize, anchorOffset = 0 } = anchoredEndSpace;
+@@ -5848,12 +5850,16 @@ function maybeUpdateAnchoredEndSpace(ctx) {
+       nextSize = hasUnknownTailSize ? previousSize || 0 : Math.max(0, state.scrollLength - contentBelowAnchor - anchorOffset);
+     }
+   }
+-  if (previousSize !== nextSize) {
+-    set$(ctx, "anchoredEndSpaceSize", nextSize);
+-    (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onSizeChanged) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
+-    if (anchoredEndSpace == null ? void 0 : anchoredEndSpace.includeInEndInset) {
++  if (previousSize !== nextSize || previousAnchorIndex !== nextAnchorIndex) {
++    state.anchoredEndSpaceAnchorIndex = nextAnchorIndex;
++    if (previousSize !== nextSize) {
++      set$(ctx, "anchoredEndSpaceSize", nextSize);
++      (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onSizeChanged) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
++    }
++    if (previousSize !== nextSize && (anchoredEndSpace == null ? void 0 : anchoredEndSpace.includeInEndInset)) {
+       updateScroll(ctx, state.scroll, true);
+     }
++    (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onCommit) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
+   }
+   return nextSize;
+ }
+diff --git a/react-native.web.mjs b/react-native.web.mjs
+index 8e97838a3e345f18d8cef9810d232ff6bc0053a5..b549334141baebac5d8155290573a718c580bd7e 100644
+--- a/react-native.web.mjs
++++ b/react-native.web.mjs
+@@ -5803,6 +5803,8 @@ function maybeUpdateAnchoredEndSpace(ctx) {
+   const state = ctx.state;
+   const anchoredEndSpace = state.props.anchoredEndSpace;
+   const previousSize = peek$(ctx, "anchoredEndSpaceSize");
++  const previousAnchorIndex = state.anchoredEndSpaceAnchorIndex;
++  const nextAnchorIndex = anchoredEndSpace == null ? void 0 : anchoredEndSpace.anchorIndex;
+   let nextSize = 0;
+   if (anchoredEndSpace) {
+     const { anchorIndex, anchorMaxSize, anchorOffset = 0 } = anchoredEndSpace;
+@@ -5827,12 +5829,16 @@ function maybeUpdateAnchoredEndSpace(ctx) {
+       nextSize = hasUnknownTailSize ? previousSize || 0 : Math.max(0, state.scrollLength - contentBelowAnchor - anchorOffset);
+     }
+   }
+-  if (previousSize !== nextSize) {
+-    set$(ctx, "anchoredEndSpaceSize", nextSize);
+-    (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onSizeChanged) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
+-    if (anchoredEndSpace == null ? void 0 : anchoredEndSpace.includeInEndInset) {
++  if (previousSize !== nextSize || previousAnchorIndex !== nextAnchorIndex) {
++    state.anchoredEndSpaceAnchorIndex = nextAnchorIndex;
++    if (previousSize !== nextSize) {
++      set$(ctx, "anchoredEndSpaceSize", nextSize);
++      (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onSizeChanged) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
++    }
++    if (previousSize !== nextSize && (anchoredEndSpace == null ? void 0 : anchoredEndSpace.includeInEndInset)) {
+       updateScroll(ctx, state.scroll, true);
+     }
++    (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onCommit) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
+   }
+   return nextSize;
+ }
+diff --git a/react.d.ts b/react.d.ts
+index 43394f513ae9516f7e36ba9d29692256445f5245..8b4b3a69a7c1f3a757f8de10e0e0062b7a20d7aa 100644
+--- a/react.d.ts
++++ b/react.d.ts
+@@ -440,6 +440,7 @@ interface AnchoredEndSpaceConfig$1 {
+     anchorMaxSize?: number;
+     includeInEndInset?: boolean;
+     onSizeChanged?: (size: number) => void;
++    onCommit?: (size: number) => void;
+ }
+ interface StickyHeaderConfig {
+     /**
+diff --git a/react.js b/react.js
+index 4b83b2564822b33ab0464fc42ffc90255ffa85b2..9c43511caf6755136160c98bc597e6d0570ff644 100644
+--- a/react.js
++++ b/react.js
+@@ -5824,6 +5824,8 @@ function maybeUpdateAnchoredEndSpace(ctx) {
+   const state = ctx.state;
+   const anchoredEndSpace = state.props.anchoredEndSpace;
+   const previousSize = peek$(ctx, "anchoredEndSpaceSize");
++  const previousAnchorIndex = state.anchoredEndSpaceAnchorIndex;
++  const nextAnchorIndex = anchoredEndSpace == null ? void 0 : anchoredEndSpace.anchorIndex;
+   let nextSize = 0;
+   if (anchoredEndSpace) {
+     const { anchorIndex, anchorMaxSize, anchorOffset = 0 } = anchoredEndSpace;
+@@ -5848,12 +5850,16 @@ function maybeUpdateAnchoredEndSpace(ctx) {
+       nextSize = hasUnknownTailSize ? previousSize || 0 : Math.max(0, state.scrollLength - contentBelowAnchor - anchorOffset);
+     }
+   }
+-  if (previousSize !== nextSize) {
+-    set$(ctx, "anchoredEndSpaceSize", nextSize);
+-    (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onSizeChanged) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
+-    if (anchoredEndSpace == null ? void 0 : anchoredEndSpace.includeInEndInset) {
++  if (previousSize !== nextSize || previousAnchorIndex !== nextAnchorIndex) {
++    state.anchoredEndSpaceAnchorIndex = nextAnchorIndex;
++    if (previousSize !== nextSize) {
++      set$(ctx, "anchoredEndSpaceSize", nextSize);
++      (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onSizeChanged) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
++    }
++    if (previousSize !== nextSize && (anchoredEndSpace == null ? void 0 : anchoredEndSpace.includeInEndInset)) {
+       updateScroll(ctx, state.scroll, true);
+     }
++    (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onCommit) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
+   }
+   return nextSize;
+ }
+diff --git a/react.mjs b/react.mjs
+index 8e97838a3e345f18d8cef9810d232ff6bc0053a5..b549334141baebac5d8155290573a718c580bd7e 100644
+--- a/react.mjs
++++ b/react.mjs
+@@ -5803,6 +5803,8 @@ function maybeUpdateAnchoredEndSpace(ctx) {
+   const state = ctx.state;
+   const anchoredEndSpace = state.props.anchoredEndSpace;
+   const previousSize = peek$(ctx, "anchoredEndSpaceSize");
++  const previousAnchorIndex = state.anchoredEndSpaceAnchorIndex;
++  const nextAnchorIndex = anchoredEndSpace == null ? void 0 : anchoredEndSpace.anchorIndex;
+   let nextSize = 0;
+   if (anchoredEndSpace) {
+     const { anchorIndex, anchorMaxSize, anchorOffset = 0 } = anchoredEndSpace;
+@@ -5827,12 +5829,16 @@ function maybeUpdateAnchoredEndSpace(ctx) {
+       nextSize = hasUnknownTailSize ? previousSize || 0 : Math.max(0, state.scrollLength - contentBelowAnchor - anchorOffset);
+     }
+   }
+-  if (previousSize !== nextSize) {
+-    set$(ctx, "anchoredEndSpaceSize", nextSize);
+-    (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onSizeChanged) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
+-    if (anchoredEndSpace == null ? void 0 : anchoredEndSpace.includeInEndInset) {
++  if (previousSize !== nextSize || previousAnchorIndex !== nextAnchorIndex) {
++    state.anchoredEndSpaceAnchorIndex = nextAnchorIndex;
++    if (previousSize !== nextSize) {
++      set$(ctx, "anchoredEndSpaceSize", nextSize);
++      (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onSizeChanged) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
++    }
++    if (previousSize !== nextSize && (anchoredEndSpace == null ? void 0 : anchoredEndSpace.includeInEndInset)) {
+       updateScroll(ctx, state.scroll, true);
+     }
++    (_a3 = anchoredEndSpace == null ? void 0 : anchoredEndSpace.onCommit) == null ? void 0 : _a3.call(anchoredEndSpace, nextSize);
+   }
+   return nextSize;
+ }
+diff --git a/reanimated.d.ts b/reanimated.d.ts
+index 6e6d6a62d87009af19af80b99b657c0cfba85285..ecbc3db25cc14e823bc0f539efc374a99b48281b 100644
+--- a/reanimated.d.ts
++++ b/reanimated.d.ts
+@@ -412,6 +412,7 @@ interface AnchoredEndSpaceConfig {
+     anchorMaxSize?: number;
+     includeInEndInset?: boolean;
+     onSizeChanged?: (size: number) => void;
++    onCommit?: (size: number) => void;
+ }
+ interface StickyHeaderConfig {
+     /**
+diff --git a/section-list.d.ts b/section-list.d.ts
+index df5de46ad3302be5813b847f69c19feb3b487598..128a53f3f63fb876bb2cbf89aedd2a17bcccbeca 100644
+--- a/section-list.d.ts
++++ b/section-list.d.ts
+@@ -468,6 +468,7 @@ interface AnchoredEndSpaceConfig {
+     anchorMaxSize?: number;
+     includeInEndInset?: boolean;
+     onSizeChanged?: (size: number) => void;
++    onCommit?: (size: number) => void;
+ }
+ interface StickyHeaderConfig {
+     /**

@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "legend-list-oncommit-repro",
+    "slug": "legend-list-oncommit-repro",
+    "scheme": "legend-list-oncommit-repro",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "bundleIdentifier": "com.legendlist.oncommitrepro",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.legendlist.oncommitrepro",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
